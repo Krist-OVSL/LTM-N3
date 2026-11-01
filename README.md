@@ -1,3 +1,11 @@
+## Thành viên và phân công
+
+| Thành viên | Phần phụ trách |
+|---|---|
+| **Ngô Đồng Quang Nguyên — Nhóm trưởng** | Khởi tạo repository; phụ trách nền tảng Electron, cấu hình cửa sổ, điều hướng và chế độ DNS/DoH trong `electron/main.js`; cầu nối giữa giao diện và tiến trình chính trong `electron/preload.js`. |
+| **Lương Phạm Xuân Bảo** | Phụ trách giao diện và tương tác mini browser trong `src/index.html`, `src/app.js`, `src/style.css`; hiển thị thông tin DNS và kết nối. |
+| **Lê Nguyễn Khôi Nguyên** | Phụ trách trang khởi động và hình minh họa trong `src/start.html`, `src/start.css`, `src/assets/`; tài liệu dự án và hướng dẫn cài đặt. |
+
 # DoH Mini Browser
 
 Ứng dụng desktop thử nghiệm cho môn Lập trình mạng. Mini browser có công tắc DoH riêng và tự tra cứu A/AAAA cho hostname của trang đang mở bằng chính resolver cấu hình cho Chromium.
