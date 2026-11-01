@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:;" />
+    <title>DoH Mini Browser</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-mark">D</div>
+      <div class="brand-copy">
+        <strong>DoH Mini Browser</strong>
+        <span>Trình duyệt thử nghiệm quyền riêng tư DNS</span>
+      </div>
+      <div class="session-badge"><span></span> Mini browser</div>
+    </header>
+
+    <nav class="toolbar" aria-label="Thanh điều hướng">
+      <button class="icon-button" id="backButton" title="Quay lại" aria-label="Quay lại">←</button>
+      <button class="icon-button" id="forwardButton" title="Tiến tới" aria-label="Tiến tới">→</button>
+      <button class="icon-button" id="reloadButton" title="Tải lại" aria-label="Tải lại">↻</button>
+      <form id="addressForm" class="address-form">
+        <span class="lock-icon">⌑</span>
+        <input id="addressInput" type="text" autocomplete="off" spellcheck="false" aria-label="Địa chỉ website" placeholder="Nhập địa chỉ hoặc từ khóa tìm kiếm" />
+        <button type="submit" class="go-button">Đi tới</button>
+      </form>
+      <button class="icon-button sidebar-button" id="sidebarToggle" title="Ẩn bảng DNS" aria-label="Ẩn bảng DNS" aria-expanded="true" aria-controls="inspector">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="3" width="15" height="14" rx="2"></rect><path d="M12.5 3v14"></path></svg>
+      </button>
+    </nav>
+
+    <main class="inspector" id="inspector" aria-label="Bảng thông tin DoH">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">BROWSER DNS</p>
+          <h1>DNS của trang đang mở</h1>
+        </div>
+        <span id="transportPill" class="doh-pill">DoH · HTTPS</span>
+      </div>
+
+      <p id="lookupDescription" class="intro">Tự tra cứu tên miền của trang vừa mở bằng cùng resolver mà mini browser sử dụng.</p>
+
+      <section class="mode-card" aria-label="Chế độ DNS của mini browser">
+        <div class="mode-copy">
+          <strong>DoH cho mini browser</strong>
+          <span id="modeStateText">Đang bật · Cloudflare · không fallback</span>
+        </div>
+        <label class="mode-toggle" title="Bật/tắt DoH cho riêng các kết nối của mini browser">
+          <input id="dohToggle" type="checkbox" checked aria-label="Bật DoH cho mini browser" />
+          <span class="toggle-track"><span></span></span>
+        </label>
+      </section>
+
+      <details class="connection-card" aria-live="polite" open>
+        <summary class="connection-heading section-summary">
+          <span class="eyebrow">DESTINATION IP · TRANG CHÍNH</span>
+          <span id="connectionStatus" class="status neutral">Chờ kết nối</span>
+          <span class="collapse-indicator" aria-hidden="true"></span>
+        </summary>
+        <div class="collapsible-content">
+          <strong id="destinationIp" class="destination-ip">Chưa có IP đích</strong>
+          <div class="connection-meta">
+            <span>Cổng / giao thức</span><strong id="destinationTransport">—</strong>
+            <span>HTTP status</span><strong id="destinationHttpStatus">—</strong>
+          </div>
+          <p class="connection-note">Đây là IP đích của kết nối dùng tải tài liệu trang chính, tương ứng với Destination IP trong Wireshark. Danh sách A/AAAA bên dưới là câu trả lời DNS để đối chiếu. Nếu qua proxy, IP đích có thể là IP proxy.</p>
+        </div>
+      </details>
+
+      <details class="result-card" aria-live="polite" open>
+        <summary class="result-heading section-summary">
+          <div>
+            <span class="eyebrow">KẾT QUẢ PHÂN GIẢI</span>
+            <h2 id="resultDomain">Đang chờ trang</h2>
+          </div>
+          <div class="result-actions">
+            <button id="refreshLookupButton" class="refresh-button" title="Tra cứu lại tên miền hiện tại">↻</button>
+            <span id="resultStatus" class="status neutral">Sẵn sàng</span>
+          </div>
+          <span class="collapse-indicator" aria-hidden="true"></span>
+        </summary>
+        <div class="collapsible-content">
+          <div id="recordList" class="record-list">
+            <p class="empty-state">Mở một trang web để xem bản ghi DNS của trang đó.</p>
+          </div>
+          <div class="result-meta">
+            <span>Resolver</span><strong id="resolverName">cloudflare-dns.com</strong>
+            <span>Chế độ app</span><strong id="resolverMode">DoH chưa xác nhận</strong>
+            <span>Thời gian</span><strong id="queryTime">—</strong>
+          </div>
+        </div>
+      </details>
+
+      <section class="page-card">
+        <p class="eyebrow">TRANG ĐANG MỞ</p>
+        <strong id="pageTitle">Đang khởi tạo…</strong>
+        <span id="pageUrl" class="page-url">—</span>
+        <span id="pageStatus" class="page-status">Trang khởi động đang hiển thị.</span>
+      </section>
+
+      <section class="notice-card">
+        <div class="notice-icon">i</div>
+        <div>
+          <strong id="modeExplanationTitle">Trạng thái của mini browser</strong>
+          <p id="modeExplanation">Công tắc này cho biết cấu hình DoH mà mini browser tự đặt; app không đọc trạng thái DoH toàn hệ thống, 1.1.1.1 hay WARP.</p>
+        </div>
+      </section>
+
+      <footer class="panel-footer">Bật: app dùng DoH-only qua Cloudflare, không fallback sang DNS thường. Tắt: app dùng resolver mặc định hệ điều hành. Không lưu lịch sử vào tệp.</footer>
+    </main>
+
+    <div id="toast" class="toast" role="status"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
