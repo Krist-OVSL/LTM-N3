@@ -4,7 +4,7 @@
 |---|---|
 | **Ngô Đồng Quang Nguyên — Nhóm trưởng** | Khởi tạo repository; phụ trách nền tảng Electron, cấu hình cửa sổ, điều hướng và chế độ DNS/DoH trong `electron/main.js`; cầu nối giữa giao diện và tiến trình chính trong `electron/preload.js`. |
 | **Lương Phạm Xuân Bảo** | Phụ trách giao diện và tương tác mini browser trong `src/index.html`, `src/app.js`, `src/style.css`; hiển thị thông tin DNS và kết nối. |
-| **Lê Nguyễn Khôi Nguyên** | Phụ trách trang khởi động và hình minh họa trong `src/start.html`, `src/start.css`, `src/assets/`; tài liệu dự án và hướng dẫn cài đặt. |
+| **Lê Nguyễn Khôi Nguyên** | Phụ trách trang khởi động và hình minh họa trong `src/start.html`, `src/start.css`, `src/assets/`; trách nhiệm bổ sung cho chức năng **So sánh DNS** và **Diễn biến lần truy cập** trong giao diện và logic ứng dụng; hỗ trợ tài liệu dự án và hướng dẫn cài đặt. |
 
 # DoH Mini Browser
 
@@ -109,7 +109,7 @@ DoH mã hóa truy vấn DNS giữa mini browser và resolver. Sau khi phân gi�
 | --- | --- |
 | **Ngô Đồng Quang Nguyên — Nhóm trưởng** | Khởi tạo repository và phần nền tảng Electron; cấu hình cửa sổ, điều hướng, DNS/DoH trong `electron/main.js`; cầu nối giới hạn giữa giao diện và tiến trình chính trong `electron/preload.js`. |
 | **Lương Phạm Xuân Bảo** | Giao diện và tương tác mini browser trong `src/index.html`, `src/app.js`, `src/style.css`; hiển thị thông tin DNS và kết nối do tiến trình chính gửi về. |
-| **Lê Nguyễn Khôi Nguyên** | Trang khởi động trong `src/start.html`, `src/start.css`, ảnh trong `src/assets/`; tài liệu dự án trong `README.md` và `HUONG_DAN_CAI_DAT.md`. |
+| **Lê Nguyễn Khôi Nguyên** | Trang khởi động trong `src/start.html`, `src/start.css`, ảnh trong `src/assets/`; bổ sung chức năng **So sánh DNS** và **Diễn biến lần truy cập** trong giao diện và logic ứng dụng; tài liệu dự án trong `README.md` và `HUONG_DAN_CAI_DAT.md`. |
 
 Phân công trên mô tả các phần chịu trách nhiệm chính; nhóm cần cập nhật nếu công việc thực tế có thay đổi.
 
