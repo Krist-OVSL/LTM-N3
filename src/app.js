@@ -140,6 +140,65 @@ function renderConnection(connection) {
   }
 }
 
+function renderComparison(result) {
+  const container = $('#comparisonResults');
+  container.replaceChildren();
+  const domain = document.createElement('p');
+  domain.className = 'comparison-domain';
+  domain.textContent = `Tên miền: ${result.domain}`;
+  container.append(domain);
+  for (const resolver of [result.doh, result.system]) {
+    const card = document.createElement('article');
+    card.className = 'comparison-resolver';
+    const heading = document.createElement('div');
+    heading.className = 'comparison-resolver-heading';
+    const name = document.createElement('strong');
+    name.textContent = resolver.resolver;
+    const time = document.createElement('span');
+    time.textContent = `${resolver.elapsedMs} ms`;
+    heading.append(name, time);
+    card.append(heading);
+    for (const record of resolver.records) {
+      const row = document.createElement('div');
+      row.className = 'comparison-record';
+      const label = document.createElement('span');
+      label.textContent = record.type;
+      const value = document.createElement('code');
+      value.textContent = record.error || (record.addresses.length
+        ? record.addresses.join(', ')
+        : 'Không có bản ghi');
+      row.append(label, value);
+      card.append(row);
+    }
+    container.append(card);
+  }
+}
+
+function renderTrace(trace) {
+  $('#traceUrl').textContent = trace.url || 'Chưa mở website';
+  const list = $('#traceSteps');
+  list.replaceChildren();
+  if (!trace.steps?.length) {
+    const empty = document.createElement('li');
+    empty.className = 'empty-state';
+    empty.textContent = 'Các mốc truy cập sẽ xuất hiện tại đây.';
+    list.append(empty);
+    return;
+  }
+  for (const step of trace.steps) {
+    const item = document.createElement('li');
+    item.className = `trace-step ${step.state}`;
+    const heading = document.createElement('strong');
+    heading.textContent = step.title;
+    const time = document.createElement('time');
+    time.textContent = step.time;
+    const detail = document.createElement('span');
+    detail.textContent = step.detail;
+    item.append(heading, time, detail);
+    list.append(item);
+  }
+}
+
 function setSidebarUI(visible) {
   const button = $('#sidebarToggle');
   document.body.classList.toggle('sidebar-visible', visible);
@@ -173,6 +232,28 @@ $('#refreshLookupButton').addEventListener('click', (event) => {
 });
 $('#sidebarToggle').addEventListener('click', () => window.miniBrowser.toggleSidebar());
 
+$('#compareForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const input = $('#compareDomain');
+  const button = $('#compareButton');
+  button.disabled = true;
+  button.textContent = 'Đang tra…';
+  try {
+    const result = await window.miniBrowser.compareDns(input.value);
+    renderComparison(result);
+  } catch (error) {
+    const container = $('#comparisonResults');
+    const message = document.createElement('p');
+    message.className = 'empty-state';
+    message.textContent = error.message;
+    container.replaceChildren(message);
+    showToast(`Không thể so sánh DNS: ${error.message}`);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'So sánh';
+  }
+});
+
 dohToggle.addEventListener('change', async () => {
   dohToggle.disabled = true;
   try {
@@ -202,10 +283,12 @@ window.miniBrowser.onState((state) => {
 });
 
 window.miniBrowser.onLookup(renderLookup);
+window.miniBrowser.onTrace(renderTrace);
 window.miniBrowser.onConnection(renderConnection);
 window.miniBrowser.onSidebar((sidebar) => setSidebarUI(sidebar.visible));
 window.miniBrowser.onDohMode((mode) => setModeUI(mode.enabled));
 window.miniBrowser.getInspection().then((result) => result && renderLookup(result));
+window.miniBrowser.getTrace().then(renderTrace);
 window.miniBrowser.getConnection().then(renderConnection);
 window.miniBrowser.getSidebar().then((sidebar) => setSidebarUI(sidebar.visible));
 window.miniBrowser.getDohMode().then((mode) => setModeUI(mode.enabled));

@@ -93,6 +93,32 @@
         </div>
       </details>
 
+      <section class="comparison-card" aria-label="So sánh hai resolver DNS">
+        <p class="eyebrow">SO SÁNH DNS</p>
+        <h2>DoH và DNS hệ điều hành</h2>
+        <form id="compareForm" class="compare-form">
+          <label for="compareDomain">Tên miền cần tra cứu</label>
+          <div class="lookup-row">
+            <input id="compareDomain" type="text" autocomplete="off" spellcheck="false" placeholder="example.com" />
+            <button id="compareButton" type="submit">So sánh</button>
+          </div>
+        </form>
+        <div id="comparisonResults" class="comparison-results" aria-live="polite">
+          <p class="empty-state">Tra cứu độc lập qua Cloudflare DoH và DNS hệ điều hành.</p>
+        </div>
+        <p class="comparison-note">Truy vấn so sánh không thay đổi chế độ DNS của mini browser. Thời gian có thể bị ảnh hưởng bởi mạng và cache.</p>
+      </section>
+
+      <section class="trace-card" aria-label="Diễn biến lần truy cập">
+        <p class="eyebrow">DIỄN BIẾN</p>
+        <h2>Lần truy cập hiện tại</h2>
+        <p id="traceUrl" class="trace-url">Chưa mở website</p>
+        <ol id="traceSteps" class="trace-steps">
+          <li class="empty-state">Các mốc truy cập sẽ xuất hiện tại đây.</li>
+        </ol>
+        <p class="comparison-note">Đây là các sự kiện ứng dụng quan sát được, không phải bản ghi đầy đủ gói mạng.</p>
+      </section>
+
       <section class="page-card">
         <p class="eyebrow">TRANG ĐANG MỞ</p>
         <strong id="pageTitle">Đang khởi tạo…</strong>

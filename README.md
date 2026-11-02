@@ -43,6 +43,8 @@ Nếu npm báo đã bỏ qua script cài đặt Electron, hãy làm theo mục k
 4. Bảng bên phải tự tra cứu hostname của trang hiện tại qua cùng Chromium resolver. Nút ↻ cạnh kết quả chạy lại tra cứu A và AAAA, bỏ qua cache resolver. Mục **Destination IP · trang chính** hiển thị IP đích mà Chromium kết nối để tải tài liệu chính, cùng cổng, giao thức và HTTP status. Danh sách DNS là câu trả lời A/AAAA để đối chiếu; IP đích thực tế có thể khác hoặc chọn một địa chỉ trong số đó.
 5. Hai thẻ **Kết nối trang chính** và **Kết quả phân giải** có thể thu gọn/mở riêng bằng cách nhấn tiêu đề. Nút biểu tượng khung bên phải cạnh thanh địa chỉ thu gọn/mở toàn bộ sidebar; khi thu gọn, vùng trang web rộng ra.
 6. Để kiểm chứng trên lớp, bắt lưu lượng bằng Wireshark khi chuyển trang/tải lại. Khi bật DoH, truy vấn browser tới Cloudflare đi trong HTTPS và nội dung DNS không hiện thành gói DNS thường; khi tắt, truy vấn DNS có thể thấy ở filter `dns` / cổng 53. Đóng các ứng dụng mạng khác để giảm nhiễu. Wireshark xác nhận hành vi trên mạng; trạng thái trong app cho biết chế độ resolver mà app đã cấu hình.
+7. Trong thẻ **So sánh DNS**, nhập tên miền để xem bản ghi A/AAAA và thời gian truy vấn qua Cloudflare DoH và DNS hệ điều hành. Đây là hai truy vấn độc lập, không làm thay đổi chế độ DNS đang bật cho mini browser; thời gian có thể chịu ảnh hưởng của mạng và cache.
+8. Thẻ **Diễn biến** ghi các mốc ứng dụng quan sát được trong lần truy cập hiện tại: bắt đầu, tra cứu DNS, kết quả và phản hồi trang chính. Đây không phải bản ghi đầy đủ mọi gói mạng.
 
 ## Luồng hoạt động
 
@@ -70,6 +72,8 @@ DoH mã hóa truy vấn DNS giữa mini browser và resolver. Sau khi phân gi�
 | Công tắc “DoH cho mini browser” | Bật/tắt Secure DNS cho browser của app. | Trạng thái BẬT/TẮT, resolver Cloudflare hoặc DNS hệ điều hành. |
 | Thẻ “Destination IP · trang chính” | Đọc địa chỉ remote IP từ phản hồi mạng của tài liệu chính qua Chromium DevTools Protocol; bỏ qua HTTP cache và service worker trong mini browser để hạn chế phản hồi không có socket IP mới. | IP đích của kết nối trang chính, cổng, giao thức và HTTP status. Không đại diện cho mọi kết nối CDN/tài nguyên phụ; proxy có thể làm IP hiển thị là endpoint proxy. |
 | Bảng “DNS của trang đang mở” | Tra cứu hostname hiện tại bằng resolver mà browser dùng. | Bản ghi A/AAAA, IP trả về, trạng thái, resolver và thời gian. |
+| Thẻ “So sánh DNS” | Tra cứu độc lập tên miền qua Cloudflare DoH và DNS hệ điều hành. | Bản ghi A/AAAA, địa chỉ, thời gian và lỗi riêng của từng resolver. |
+| Thẻ “Diễn biến” | Gom các mốc của lần truy cập hiện tại từ sự kiện ứng dụng. | Bắt đầu truy cập, tra cứu DNS, kết quả và phản hồi/lỗi tải trang. |
 | Nút sidebar | Thu gọn/mở bảng thông tin DNS. | Khi ẩn, khung website mở rộng hết chiều ngang. |
 | Tiêu đề “Destination IP · trang chính” và “Kết quả phân giải” | Thu gọn/mở nội dung của từng thẻ. | Các tiêu đề khác luôn hiển thị cùng nội dung. |
 | Thẻ “Trang đang mở” | Cho biết địa chỉ và trạng thái điều hướng hiện tại. | Tiêu đề trang, URL và trạng thái tải/lỗi. |
@@ -95,6 +99,7 @@ DoH mã hóa truy vấn DNS giữa mini browser và resolver. Sau khi phân gi�
 - Ứng dụng hiện không ghi lịch sử duyệt web vào file.
 - IP endpoint của phản hồi trang chính chỉ được giữ trong bộ nhớ để hiển thị trên sidebar; app không lưu danh sách IP này vào file.
 - Khi DoH bật, các truy vấn DNS của mini browser được gửi tới Cloudflare; không nhập tên miền nhạy cảm khi demo công khai.
+- Khi dùng chức năng so sánh, tên miền được gửi tới Cloudflare DoH và được tra cứu bằng API phân giải tên miền của hệ điều hành.
 - Browser lưu dữ liệu phiên Electron cục bộ theo partition riêng. Chưa có nút xóa cache/cookie trong MVP.
 - Ứng dụng không chụp packet và không giám sát thiết bị khác. Wireshark là công cụ quan sát ngoài trong môi trường lab có thông báo cho người tham gia.
 

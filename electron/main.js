@@ -1,4 +1,5 @@
 const { app, BrowserWindow, WebContentsView, ipcMain } = require('electron');
+const dns = require('node:dns').promises;
 const path = require('node:path');
 
 const INSPECTOR_WIDTH = 420;
@@ -11,6 +12,8 @@ let sidebarVisible = true;
 let lookupSequence = 0;
 let latestLookup = null;
 let latestConnection = { state: 'idle' };
+let latestTrace = { url: '', steps: [] };
+let traceInspectionStarted = false;
 let mainFrameId = null;
 let networkMonitorPromise = null;
 
@@ -69,6 +72,67 @@ function sendSidebarState() {
   mainWindow.webContents.send('browser:sidebar', { visible: sidebarVisible });
 }
 
+function sendTrace() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send('browser:trace', latestTrace);
+}
+
+function addTraceStep(title, detail, state = 'complete') {
+  latestTrace.steps.push({ title, detail, state, time: new Date().toLocaleTimeString() });
+  if (latestTrace.steps.length > 100) latestTrace.steps.shift();
+  sendTrace();
+}
+
+function startTrace(url) {
+  latestTrace = { url, steps: [] };
+  traceInspectionStarted = false;
+  addTraceStep('Bắt đầu truy cập', url, 'loading');
+}
+
+async function resolveWithCloudflare(domain, type) {
+  const endpoint = new URL('https://cloudflare-dns.com/dns-query');
+  endpoint.searchParams.set('name', domain);
+  endpoint.searchParams.set('type', type);
+  const response = await fetch(endpoint, { headers: { accept: 'application/dns-json' } });
+  if (!response.ok) throw new Error(`Cloudflare DNS trả về HTTP ${response.status}`);
+  const result = await response.json();
+  if (result.Status !== 0 && result.Status !== 3) {
+    throw new Error(`DNS status ${result.Status}`);
+  }
+  return (result.Answer || [])
+    .filter((answer) => answer.type === (type === 'A' ? 1 : 28))
+    .map((answer) => answer.data);
+}
+
+async function resolveWithSystem(domain, type) {
+  try {
+    const records = await dns.lookup(domain, {
+      all: true,
+      family: type === 'A' ? 4 : 6,
+    });
+    return records.map((record) => record.address);
+  } catch (error) {
+    if (error.code === 'ENODATA' || error.code === 'ENOTFOUND') return [];
+    throw error;
+  }
+}
+
+async function compareResolver(domain, resolver, resolve) {
+  const startedAt = performance.now();
+  const records = await Promise.all(['A', 'AAAA'].map(async (type) => {
+    try {
+      return { type, addresses: await resolve(domain, type), error: '' };
+    } catch (error) {
+      return { type, addresses: [], error: error.message };
+    }
+  }));
+  return {
+    resolver,
+    elapsedMs: Math.round(performance.now() - startedAt),
+    records,
+  };
+}
+
 async function attachNetworkMonitor() {
   const debuggerApi = browserView.webContents.debugger;
   debuggerApi.on('message', (_event, method, params) => {
@@ -90,6 +154,10 @@ async function attachNetworkMonitor() {
       fromServiceWorker: response.fromServiceWorker || false,
     };
     sendConnectionState();
+    addTraceStep(
+      'Nhận phản hồi trang chính',
+      `HTTP ${response.status}${response.remoteIPAddress ? ` · IP ${response.remoteIPAddress}` : ''} · ${response.protocol || 'giao thức chưa rõ'}`,
+    );
   });
 
   try {
@@ -144,6 +212,9 @@ async function inspectCurrentPage(url) {
   }
 
   const domain = parsed.hostname;
+  if (latestTrace.url === url) {
+    addTraceStep('Bắt đầu tra cứu DNS', `${domain} · bản ghi A và AAAA qua ${dohEnabled ? 'Cloudflare DoH' : 'DNS hệ điều hành'}`, 'loading');
+  }
   latestLookup = { url, domain, state: 'loading', dohEnabled };
   sendLookupState();
 
@@ -171,9 +242,14 @@ async function inspectCurrentPage(url) {
         { type: 'AAAA', addresses: addresses(aaaa) },
       ],
     };
+    if (latestTrace.url === url) {
+      const count = latestLookup.records.reduce((total, record) => total + record.addresses.length, 0);
+      addTraceStep('Hoàn tất tra cứu DNS', `${count} địa chỉ · ${latestLookup.elapsedMs} ms`);
+    }
   } catch (error) {
     if (sequence !== lookupSequence) return;
     latestLookup = { url, domain, state: 'error', dohEnabled, error: error.message };
+    if (latestTrace.url === url) addTraceStep('Tra cứu DNS thất bại', error.message, 'error');
   }
   sendLookupState();
 }
@@ -232,11 +308,13 @@ function createWindow() {
   });
 
   browserView.webContents.on('did-navigate', () => sendPageState());
-  browserView.webContents.on('did-navigate', (_event, url) => inspectCurrentPage(url));
   browserView.webContents.on('did-navigate-in-page', () => sendPageState());
   browserView.webContents.on('page-title-updated', () => sendPageState());
   browserView.webContents.on('did-start-loading', () => {
+    const currentUrl = browserView.webContents.getURL();
+    if (currentUrl.startsWith('http') && latestTrace.url !== currentUrl) startTrace(currentUrl);
     latestConnection = { state: 'loading', url: browserView.webContents.getURL() };
+    if (latestTrace.url) addTraceStep('Đang tải trang', currentUrl.startsWith('http') ? currentUrl : latestTrace.url, 'loading');
     sendConnectionState();
     sendPageState({ loading: true });
   });
@@ -244,12 +322,20 @@ function createWindow() {
   browserView.webContents.on('will-navigate', (event, url) => {
     try {
       if (!['http:', 'https:'].includes(new URL(url).protocol)) event.preventDefault();
+      else {
+        if (latestTrace.url !== url) startTrace(url);
+        if (!traceInspectionStarted) {
+          traceInspectionStarted = true;
+          inspectCurrentPage(url);
+        }
+      }
     } catch {
       event.preventDefault();
     }
   });
   browserView.webContents.on('did-fail-load', (_event, errorCode, description, validatedURL, isMainFrame) => {
     if (isMainFrame && errorCode !== -3) {
+      addTraceStep('Không tải được trang', `${description} (${errorCode})`, 'error');
       latestConnection = { state: 'error', url: validatedURL, error: `${description} (${errorCode})` };
       sendConnectionState();
       sendPageState({ error: `${description} (${errorCode})`, failedURL: validatedURL });
@@ -271,6 +357,7 @@ function createWindow() {
 
 ipcMain.handle('browser:navigate', async (_event, input) => {
   const url = normalizeAddress(input);
+  startTrace(url);
   await ensureNetworkMonitor();
   await browserView.webContents.loadURL(url);
   return { url };
@@ -281,8 +368,36 @@ ipcMain.handle('browser:back', () => {
 ipcMain.handle('browser:forward', () => {
   if (browserView.webContents.navigationHistory.canGoForward()) browserView.webContents.navigationHistory.goForward();
 });
-ipcMain.handle('browser:reload', () => browserView.webContents.reload());
+ipcMain.handle('browser:reload', () => {
+  const url = browserView.webContents.getURL();
+  if (url) {
+    startTrace(url);
+    traceInspectionStarted = true;
+    inspectCurrentPage(url);
+  }
+  return browserView.webContents.reload();
+});
 ipcMain.handle('browser:get-inspection', () => latestLookup);
+ipcMain.handle('browser:get-trace', () => latestTrace);
+ipcMain.handle('browser:compare-dns', async (_event, input) => {
+  const value = String(input || '').trim();
+  let parsed;
+  try {
+    parsed = new URL(`https://${value}`);
+  } catch {
+    throw new Error('Nhập tên miền hợp lệ, ví dụ example.com.');
+  }
+  if (!value || !parsed.hostname || parsed.username || parsed.password
+      || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+    throw new Error('Chỉ nhập tên miền, không nhập đường dẫn website.');
+  }
+  const domain = parsed.hostname;
+  const [doh, system] = await Promise.all([
+    compareResolver(domain, 'Cloudflare DoH', resolveWithCloudflare),
+    compareResolver(domain, 'DNS hệ điều hành', resolveWithSystem),
+  ]);
+  return { domain, doh, system };
+});
 ipcMain.handle('browser:get-connection', () => latestConnection);
 ipcMain.handle('browser:get-sidebar', () => ({ visible: sidebarVisible }));
 ipcMain.handle('browser:toggle-sidebar', () => {
