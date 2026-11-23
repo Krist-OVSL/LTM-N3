@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self'; form-action https://www.google.com" />
     <title>Trang khởi động · DoH Mini Browser</title>
     <link rel="stylesheet" href="./start.css" />
   </head>
@@ -12,8 +12,19 @@
     <div class="shade" aria-hidden="true"></div>
     <main class="welcome">
       <span class="kicker">DOH MINI BROWSER</span>
-      <h1>Một đêm an lành.</h1>
-      <p>Nhập địa chỉ website hoặc từ khóa tìm kiếm vào thanh địa chỉ phía trên để bắt đầu.</p>
+      <h1>Bạn muốn tìm gì?</h1>
+      <form class="search-form" action="https://www.google.com/search" method="get" role="search">
+        <label class="visually-hidden" for="googleSearch">Tìm kiếm trên Google</label>
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <circle cx="10.8" cy="10.8" r="6.8"></circle>
+            <path d="m16 16 4.5 4.5"></path>
+          </svg>
+        </span>
+        <input id="googleSearch" type="search" name="q" placeholder="Nhập từ khóa tìm kiếm..." autocomplete="off" required />
+        <button type="submit">Search</button>
+      </form>
+      <span class="search-hint">Nhấn Enter hoặc Search để tìm trên Google</span>
     </main>
     <footer>Minh họa Silent Night, Holy Night · Reverse: 1999</footer>
   </body>
