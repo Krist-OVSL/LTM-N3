@@ -106,13 +106,9 @@ async function resolveWithCloudflare(domain, type) {
 
 async function resolveWithSystem(domain, type) {
   try {
-    const records = await dns.lookup(domain, {
-      all: true,
-      family: type === 'A' ? 4 : 6,
-    });
-    return records.map((record) => record.address);
+    return type === 'A' ? await dns.resolve4(domain) : await dns.resolve6(domain);
   } catch (error) {
-    if (error.code === 'ENODATA' || error.code === 'ENOTFOUND') return [];
+    if (error.code === 'ENODATA' || error.code === 'ENOTFOUND' || error.code === 'ESERVFAIL') return [];
     throw error;
   }
 }

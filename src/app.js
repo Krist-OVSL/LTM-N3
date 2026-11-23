@@ -13,8 +13,8 @@ function showToast(message) {
 function setModeUI(enabled) {
   dohToggle.checked = enabled;
   $('#modeStateText').textContent = enabled
-    ? 'ĐANG BẬT · Cloudflare · không fallback'
-    : 'ĐANG TẮT · resolver DNS của hệ điều hành';
+    ? 'Truy vấn DNS mã hóa · HTTPS · cổng 443 · Cloudflare'
+    : 'Truy vấn DNS plaintext · UDP · cổng 53 · DNS hệ điều hành';
   $('#transportPill').textContent = enabled ? 'DoH · HTTPS' : 'OS DNS';
   $('#transportPill').classList.toggle('plain-pill', !enabled);
   $('#resolverName').textContent = enabled ? 'cloudflare-dns.com' : 'DNS hệ điều hành';
@@ -174,30 +174,7 @@ function renderComparison(result) {
   }
 }
 
-function renderTrace(trace) {
-  $('#traceUrl').textContent = trace.url || 'Chưa mở website';
-  const list = $('#traceSteps');
-  list.replaceChildren();
-  if (!trace.steps?.length) {
-    const empty = document.createElement('li');
-    empty.className = 'empty-state';
-    empty.textContent = 'Các mốc truy cập sẽ xuất hiện tại đây.';
-    list.append(empty);
-    return;
-  }
-  for (const step of trace.steps) {
-    const item = document.createElement('li');
-    item.className = `trace-step ${step.state}`;
-    const heading = document.createElement('strong');
-    heading.textContent = step.title;
-    const time = document.createElement('time');
-    time.textContent = step.time;
-    const detail = document.createElement('span');
-    detail.textContent = step.detail;
-    item.append(heading, time, detail);
-    list.append(item);
-  }
-}
+
 
 function setSidebarUI(visible) {
   const button = $('#sidebarToggle');
@@ -212,12 +189,10 @@ $('#addressForm').addEventListener('submit', async (event) => {
   event.preventDefault();
   const address = addressInput.value.trim();
   if (!address) return;
-  $('#pageStatus').textContent = 'Đang mở địa chỉ…';
   try {
     const result = await window.miniBrowser.navigate(address);
     addressInput.value = result.url;
   } catch (error) {
-    $('#pageStatus').textContent = error.message;
     showToast(error.message);
   }
 });
@@ -272,23 +247,15 @@ dohToggle.addEventListener('change', async () => {
 
 window.miniBrowser.onState((state) => {
   if (state.url) addressInput.value = state.url.startsWith('http') ? state.url : '';
-  $('#pageTitle').textContent = state.title || 'Trang web';
-  $('#pageUrl').textContent = state.url?.startsWith('http') ? state.url : 'Trang khởi động';
   $('#backButton').disabled = !state.canGoBack;
   $('#forwardButton').disabled = !state.canGoForward;
-  if (state.loading) $('#pageStatus').textContent = 'Đang tải trang…';
-  else if (state.error) $('#pageStatus').textContent = `Không tải được: ${state.error}`;
-  else if (state.url?.startsWith('http')) $('#pageStatus').textContent = 'Đã tải xong';
-  else if (state.url) $('#pageStatus').textContent = 'Nhập địa chỉ ở thanh phía trên để bắt đầu.';
 });
 
 window.miniBrowser.onLookup(renderLookup);
-window.miniBrowser.onTrace(renderTrace);
 window.miniBrowser.onConnection(renderConnection);
 window.miniBrowser.onSidebar((sidebar) => setSidebarUI(sidebar.visible));
 window.miniBrowser.onDohMode((mode) => setModeUI(mode.enabled));
 window.miniBrowser.getInspection().then((result) => result && renderLookup(result));
-window.miniBrowser.getTrace().then(renderTrace);
 window.miniBrowser.getConnection().then(renderConnection);
 window.miniBrowser.getSidebar().then((sidebar) => setSidebarUI(sidebar.visible));
 window.miniBrowser.getDohMode().then((mode) => setModeUI(mode.enabled));

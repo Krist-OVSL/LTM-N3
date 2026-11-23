@@ -45,13 +45,38 @@
       <section class="mode-card" aria-label="Chế độ DNS của mini browser">
         <div class="mode-copy">
           <strong>DoH cho mini browser</strong>
-          <span id="modeStateText">Đang bật · Cloudflare · không fallback</span>
+          <span id="modeStateText">Truy vấn DNS mã hóa · HTTPS · cổng 443 · Cloudflare</span>
         </div>
         <label class="mode-toggle" title="Bật/tắt DoH cho riêng các kết nối của mini browser">
           <input id="dohToggle" type="checkbox" checked aria-label="Bật DoH cho mini browser" />
           <span class="toggle-track"><span></span></span>
         </label>
       </section>
+
+      <div class="flow-diagram">
+        <div class="flow-row">
+          <span class="flow-label">BẬT DoH</span>
+          <span class="flow-path">App <span class="flow-arrow">→</span> <span class="flow-secure">HTTPS :443 🔒</span> <span class="flow-arrow">→</span> Cloudflare</span>
+        </div>
+        <div class="flow-row">
+          <span class="flow-label">TẮT DoH</span>
+          <span class="flow-path">App <span class="flow-arrow">→</span> <span class="flow-plain">UDP :53 ⚠️</span> <span class="flow-arrow">→</span> DNS Server</span>
+        </div>
+      </div>
+
+      <div class="wireshark-hint">
+        <p class="eyebrow">🔍 KIỂM CHỨNG WIRESHARK</p>
+        <div class="ws-filter">
+          <span class="ws-label">Khi BẬT DoH:</span>
+          <code class="ws-code">ip.dst == 1.1.1.1 &amp;&amp; tcp.port == 443</code>
+          <span class="ws-note">→ Thấy TLS Application Data, không thấy nội dung DNS</span>
+        </div>
+        <div class="ws-filter">
+          <span class="ws-label">Khi TẮT DoH:</span>
+          <code class="ws-code">dns</code>
+          <span class="ws-note">→ Thấy tên miền dạng plaintext trong gói tin</span>
+        </div>
+      </div>
 
       <details class="connection-card" aria-live="polite" open>
         <summary class="connection-heading section-summary">
@@ -106,24 +131,7 @@
         <div id="comparisonResults" class="comparison-results" aria-live="polite">
           <p class="empty-state">Tra cứu độc lập qua Cloudflare DoH và DNS hệ điều hành.</p>
         </div>
-        <p class="comparison-note">Truy vấn so sánh không thay đổi chế độ DNS của mini browser. Thời gian có thể bị ảnh hưởng bởi mạng và cache.</p>
-      </section>
-
-      <section class="trace-card" aria-label="Diễn biến lần truy cập">
-        <p class="eyebrow">DIỄN BIẾN</p>
-        <h2>Lần truy cập hiện tại</h2>
-        <p id="traceUrl" class="trace-url">Chưa mở website</p>
-        <ol id="traceSteps" class="trace-steps">
-          <li class="empty-state">Các mốc truy cập sẽ xuất hiện tại đây.</li>
-        </ol>
-        <p class="comparison-note">Đây là các sự kiện ứng dụng quan sát được, không phải bản ghi đầy đủ gói mạng.</p>
-      </section>
-
-      <section class="page-card">
-        <p class="eyebrow">TRANG ĐANG MỞ</p>
-        <strong id="pageTitle">Đang khởi tạo…</strong>
-        <span id="pageUrl" class="page-url">—</span>
-        <span id="pageStatus" class="page-status">Trang khởi động đang hiển thị.</span>
+        <p class="comparison-note">Cloudflare DoH mã hóa truy vấn trong HTTPS (cổng 443). DNS hệ điều hành gửi truy vấn dạng plaintext qua UDP (cổng 53). Truy vấn so sánh không thay đổi chế độ DNS của mini browser.</p>
       </section>
 
       <section class="notice-card">

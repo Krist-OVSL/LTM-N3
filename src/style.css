@@ -37,8 +37,8 @@ body.sidebar-visible .toolbar { padding-right: 435px; }
 .address-form { margin-left: 5px; height: 35px; flex: 1; display: flex; align-items: center; padding: 0 4px 0 12px; border: 1px solid #e3e8f0; border-radius: 10px; background: #f8f9fc; }
 .lock-icon { color: #7891b1; font-size: 16px; }
 .address-form input { flex: 1; min-width: 0; padding: 0 9px; outline: 0; border: 0; background: transparent; color: #344258; font-size: 13px; }
-.go-button, #lookupButton { border: 0; border-radius: 7px; padding: 7px 12px; color: #fff; background: var(--blue); font-size: 12px; font-weight: 700; cursor: pointer; }
-.go-button:hover, #lookupButton:hover { background: #245bd8; }
+.go-button { border: 0; border-radius: 7px; padding: 7px 12px; color: #fff; background: var(--blue); font-size: 12px; font-weight: 700; cursor: pointer; }
+.go-button:hover { background: #245bd8; }
 .sidebar-button { flex: 0 0 auto; margin-left: 3px; }
 .sidebar-button svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -72,8 +72,6 @@ h1 { margin: 0; font: 700 18px 'Segoe UI', sans-serif; letter-spacing: -.3px; }
 .lookup-row { display: flex; gap: 6px; }
 .lookup-row input { width: 0; flex: 1; min-width: 0; height: 33px; padding: 0 9px; border: 1px solid #e4e9f1; border-radius: 8px; outline: 0; color: #344258; background: #fbfcfe; font-size: 12px; }
 .lookup-row input:focus, .address-form:focus-within { border-color: #9bb8fc; box-shadow: 0 0 0 3px #316cf411; }
-#lookupButton { min-width: 74px; }
-#lookupButton:disabled { opacity: .65; cursor: wait; }
 .result-card { margin-top: 13px; padding: 12px; border: 1px solid #e9edf3; border-radius: 11px; background: #fbfcfe; }
 .result-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .result-actions { display: flex; align-items: center; gap: 5px; }
@@ -91,8 +89,8 @@ h1 { margin: 0; font: 700 18px 'Segoe UI', sans-serif; letter-spacing: -.3px; }
 .empty-state { margin: 0; padding: 8px 2px; color: #8a96a8; font-size: 11px; line-height: 1.5; }
 .result-meta { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding-top: 10px; border-top: 1px solid #e9edf3; color: #8591a3; font-size: 10px; }
 .result-meta strong { color: #53627a; text-align: right; font-size: 10px; font-weight: 600; }
-.comparison-card, .trace-card { margin-top: 12px; padding: 12px; border: 1px solid #e6ebf2; border-radius: 11px; background: #fff; }
-.comparison-card h2, .trace-card h2 { margin: 0 0 10px; color: #334158; font: 700 13px 'Segoe UI', sans-serif; }
+.comparison-card { margin-top: 12px; padding: 12px; border: 1px solid #e6ebf2; border-radius: 11px; background: #fff; }
+.comparison-card h2 { margin: 0 0 10px; color: #334158; font: 700 13px 'Segoe UI', sans-serif; }
 .compare-form label { display: block; margin-bottom: 6px; color: #647188; font-size: 11px; font-weight: 600; }
 #compareButton { min-width: 76px; border: 0; border-radius: 7px; padding: 7px 10px; color: #fff; background: var(--blue); font-size: 11px; font-weight: 700; cursor: pointer; }
 #compareButton:disabled { opacity: .65; cursor: wait; }
@@ -105,19 +103,20 @@ h1 { margin: 0; font: 700 18px 'Segoe UI', sans-serif; letter-spacing: -.3px; }
 .comparison-record { padding-top: 5px; color: #8190a5; font-size: 10px; }
 .comparison-record code { max-width: 245px; color: #31547e; font: 10px 'Cascadia Code', Consolas, monospace; text-align: right; overflow-wrap: anywhere; }
 .comparison-note { margin: 8px 0 0; color: #8793a5; font-size: 10px; line-height: 1.45; }
-.trace-url { margin: -4px 0 10px; color: #718198; font: 10px 'Cascadia Code', Consolas, monospace; overflow-wrap: anywhere; }
-.trace-steps { display: grid; gap: 0; margin: 0; padding: 0 0 0 12px; list-style: none; border-left: 1px solid #dfe6f0; }
-.trace-step { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 4px 7px; padding: 0 0 12px 9px; }
-.trace-step::before { position: absolute; top: 3px; left: -16px; width: 7px; height: 7px; border-radius: 50%; background: #31a879; content: ''; }
-.trace-step.loading::before { background: #e2a53a; }
-.trace-step.error::before { background: #d54d5c; }
-.trace-step strong { color: #465772; font-size: 10px; }
-.trace-step time { color: #9aa4b2; font-size: 9px; }
-.trace-step > span { grid-column: 1 / -1; color: #7d899b; font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
-.page-card { margin-top: 12px; padding: 11px 12px; border: 1px solid #e9edf3; border-radius: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
-.page-card strong { max-width: 100%; overflow: hidden; color: #334158; font: 700 12px 'Segoe UI', sans-serif; text-overflow: ellipsis; white-space: nowrap; }
-.page-url { max-width: 100%; overflow: hidden; color: #718198; font: 10px 'Cascadia Code', Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
-.page-status { color: #8290a5; font-size: 10px; }
+.flow-diagram { margin: 10px 0 10px; padding: 10px 12px; border-radius: 10px; background: #f4f7fc; border: 1px solid #dce7fa; }
+.flow-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.flow-label { flex: 0 0 64px; font-weight: 700; color: #465772; font-size: 10px; }
+.flow-path { color: #53637a; font-size: 10px; }
+.flow-arrow { color: #9aa4b6; }
+.flow-secure { color: #24835f; font-weight: 700; }
+.flow-plain { color: #b23c4a; font-weight: 700; }
+.wireshark-hint { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: #fffdf3; border: 1px solid #e8d99a; }
+.wireshark-hint .eyebrow { margin-bottom: 8px; color: #856c2a; }
+.ws-filter { padding: 5px 0; border-top: 1px solid #f0e8c0; }
+.ws-filter:first-of-type { border-top: none; padding-top: 0; }
+.ws-label { display: block; color: #6b5c2e; font-size: 10px; font-weight: 700; margin-bottom: 3px; }
+.ws-code { display: inline-block; color: #2d5a1b; font: 11px 'Cascadia Code', Consolas, monospace; background: #eef7e8; padding: 2px 7px; border-radius: 5px; margin-bottom: 2px; }
+.ws-note { display: block; color: #7a6b3a; font-size: 10px; }
 .notice-card { display: flex; gap: 8px; margin-top: 12px; padding: 10px; border: 1px solid #dce9ff; border-radius: 10px; background: #f4f8ff; }
 .notice-icon { flex: 0 0 auto; width: 16px; height: 16px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #7098eb; font: 700 10px Georgia, serif; }
 .notice-card strong { color: #36527e; font-size: 11px; }
