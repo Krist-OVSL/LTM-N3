@@ -1,5 +1,6 @@
 const { app, BrowserWindow, WebContentsView, ipcMain } = require('electron');
 const dns = require('node:dns').promises;
+const net = require('node:net');
 const path = require('node:path');
 
 const INSPECTOR_WIDTH = 420;
@@ -35,17 +36,29 @@ function normalizeAddress(input) {
   const value = String(input || '').trim();
   if (!value) throw new Error('Nhập địa chỉ website hoặc từ khóa tìm kiếm.');
 
+  const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(value)}`;
+  if (/\s/.test(value)) return searchUrl;
+
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:\/\//.test(value);
   let url;
   try {
-    url = new URL(/^[a-zA-Z][a-zA-Z\d+.-]*:\/\//.test(value) ? value : `https://${value}`);
+    url = new URL(hasScheme ? value : `https://${value}`);
   } catch {
-    url = new URL(`https://duckduckgo.com/?q=${encodeURIComponent(value)}`);
+    return searchUrl;
   }
 
   if (!['http:', 'https:'].includes(url.protocol)) {
     throw new Error('Mini browser chỉ mở địa chỉ HTTP hoặc HTTPS.');
   }
-  return url.toString();
+  if (hasScheme) return url.toString();
+
+  const hostname = url.hostname.replace(/\.$/, '');
+  const labels = hostname.split('.');
+  const hasDomainSuffix = net.isIP(hostname) !== 0
+    || (labels.length > 1
+      && labels.every(Boolean)
+      && /^(?:[a-z]{2,}|xn--[a-z0-9-]+)$/i.test(labels[labels.length - 1]));
+  return hasDomainSuffix ? url.toString() : searchUrl;
 }
 
 function applyDohMode(enabled) {
