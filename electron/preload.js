@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('miniBrowser', {
   back: () => ipcRenderer.invoke('browser:back'),
   forward: () => ipcRenderer.invoke('browser:forward'),
   reload: () => ipcRenderer.invoke('browser:reload'),
+  clearCache: () => ipcRenderer.invoke('browser:clear-cache'),
   refreshInspection: () => ipcRenderer.invoke('browser:refresh-inspection'),
   getInspection: () => ipcRenderer.invoke('browser:get-inspection'),
   compareDns: (domain) => ipcRenderer.invoke('browser:compare-dns', domain),

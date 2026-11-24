@@ -34,6 +34,10 @@ body.sidebar-visible .toolbar { padding-right: 435px; }
 .icon-button { width: 31px; height: 31px; border: 0; border-radius: 9px; background: transparent; color: #66748a; font-size: 20px; cursor: pointer; }
 .icon-button:hover:not(:disabled) { background: #f0f4fa; color: #213755; }
 .icon-button:disabled { opacity: .35; cursor: default; }
+.cache-button { flex: 0 0 auto; height: 31px; padding: 0 11px; border: 1px solid #e3e8f0; border-radius: 9px; background: #fff; color: #53647c; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.cache-button:hover:not(:disabled) { border-color: #bfd0f6; background: #f0f4fa; color: #213755; }
+.cache-button:disabled { opacity: .55; cursor: wait; }
+.cache-button:focus-visible, .copy-button:focus-visible { outline: 3px solid #316cf444; }
 .address-form { margin-left: 5px; height: 35px; flex: 1; display: flex; align-items: center; padding: 0 4px 0 12px; border: 1px solid #e3e8f0; border-radius: 10px; background: #f8f9fc; }
 .lock-icon { color: #7891b1; font-size: 16px; }
 .address-form input { flex: 1; min-width: 0; padding: 0 9px; outline: 0; border: 0; background: transparent; color: #344258; font-size: 13px; }
@@ -116,6 +120,11 @@ h1 { margin: 0; font: 700 18px 'Segoe UI', sans-serif; letter-spacing: -.3px; }
 .ws-filter:first-of-type { border-top: none; padding-top: 0; }
 .ws-label { display: block; color: #6b5c2e; font-size: 10px; font-weight: 700; margin-bottom: 3px; }
 .ws-code { display: inline-block; color: #2d5a1b; font: 11px 'Cascadia Code', Consolas, monospace; background: #eef7e8; padding: 2px 7px; border-radius: 5px; margin-bottom: 2px; }
+.ws-code-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 2px; }
+.ws-code-row .ws-code { margin-bottom: 0; }
+.copy-button { flex: 0 0 auto; padding: 2px 8px; border: 1px solid #d9d1a6; border-radius: 5px; background: #fff; color: #6b5c2e; font-size: 10px; font-weight: 700; cursor: pointer; }
+.copy-button:hover { border-color: #b9a95f; background: #fbf7e2; }
+.copy-button.copied { border-color: #9fd3b8; background: #e9f8f1; color: #28775b; }
 .ws-note { display: block; color: #7a6b3a; font-size: 10px; }
 .notice-card { display: flex; gap: 8px; margin-top: 12px; padding: 10px; border: 1px solid #dce9ff; border-radius: 10px; background: #f4f8ff; }
 .notice-icon { flex: 0 0 auto; width: 16px; height: 16px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #7098eb; font: 700 10px Georgia, serif; }

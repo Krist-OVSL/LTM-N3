@@ -21,6 +21,7 @@
       <button class="icon-button" id="backButton" title="Quay lại" aria-label="Quay lại">←</button>
       <button class="icon-button" id="forwardButton" title="Tiến tới" aria-label="Tiến tới">→</button>
       <button class="icon-button" id="reloadButton" title="Tải lại" aria-label="Tải lại">↻</button>
+      <button class="cache-button" id="clearCacheButton" type="button" title="Xóa cache DNS và cache trình duyệt của mini browser">🧹 Xóa Cache</button>
       <form id="addressForm" class="address-form">
         <span class="lock-icon">⌑</span>
         <input id="addressInput" type="text" autocomplete="off" spellcheck="false" aria-label="Địa chỉ website" placeholder="Nhập địa chỉ hoặc từ khóa tìm kiếm" />
@@ -68,12 +69,18 @@
         <p class="eyebrow">🔍 KIỂM CHỨNG WIRESHARK</p>
         <div class="ws-filter">
           <span class="ws-label">Khi BẬT DoH:</span>
-          <code class="ws-code">ip.dst == 1.1.1.1 &amp;&amp; tcp.port == 443</code>
+          <div class="ws-code-row">
+            <code class="ws-code">ip.dst == 1.1.1.1 &amp;&amp; tcp.port == 443</code>
+            <button class="copy-button" type="button" title="Copy filter để dán vào Wireshark">📋 Copy</button>
+          </div>
           <span class="ws-note">→ Thấy TLS Application Data, không thấy nội dung DNS</span>
         </div>
         <div class="ws-filter">
           <span class="ws-label">Khi TẮT DoH:</span>
-          <code class="ws-code">dns</code>
+          <div class="ws-code-row">
+            <code class="ws-code">dns</code>
+            <button class="copy-button" type="button" title="Copy filter để dán vào Wireshark">📋 Copy</button>
+          </div>
           <span class="ws-note">→ Thấy tên miền dạng plaintext trong gói tin</span>
         </div>
       </div>

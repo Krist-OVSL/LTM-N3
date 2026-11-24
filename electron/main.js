@@ -404,6 +404,11 @@ ipcMain.handle('browser:toggle-sidebar', () => {
 });
 ipcMain.handle('browser:get-doh-mode', () => ({ enabled: dohEnabled, mode: dohEnabled ? 'secure' : 'off' }));
 ipcMain.handle('browser:refresh-inspection', () => inspectCurrentPage(browserView.webContents.getURL()));
+ipcMain.handle('browser:clear-cache', async () => {
+  const session = browserView.webContents.session;
+  await Promise.all([session.clearHostResolverCache(), session.clearCache()]);
+  return { ok: true };
+});
 ipcMain.handle('browser:set-doh-mode', async (_event, enabled) => {
   applyDohMode(enabled);
   await browserView.webContents.session.clearHostResolverCache();

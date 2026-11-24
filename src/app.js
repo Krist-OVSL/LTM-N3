@@ -229,6 +229,52 @@ $('#compareForm').addEventListener('submit', async (event) => {
   }
 });
 
+$('#clearCacheButton').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    await window.miniBrowser.clearCache();
+    showToast('Đã xóa cache DNS và cache trình duyệt. Bấm ↻ để tải lại và đo từ đầu.');
+  } catch (error) {
+    showToast(`Không xóa được cache: ${error.message}`);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.cssText = 'position:fixed;opacity:0;';
+    document.body.append(area);
+    area.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    area.remove();
+    return ok;
+  }
+}
+
+document.querySelectorAll('.copy-button').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.closest('.ws-filter').querySelector('.ws-code').textContent.trim();
+    const ok = await copyText(text);
+    window.clearTimeout(button.timer);
+    button.textContent = ok ? '✓ Đã copy' : '✗ Lỗi copy';
+    button.classList.toggle('copied', ok);
+    showToast(ok ? `Đã copy filter Wireshark: ${text}` : 'Không copy được, hãy bôi đen và nhấn Ctrl+C.');
+    button.timer = window.setTimeout(() => {
+      button.textContent = '📋 Copy';
+      button.classList.remove('copied');
+    }, 1600);
+  });
+});
+
 dohToggle.addEventListener('change', async () => {
   dohToggle.disabled = true;
   try {
