@@ -1,10 +1,17 @@
 const { app, BrowserWindow, WebContentsView, ipcMain } = require('electron');
+const { randomInt } = require('node:crypto');
 const dns = require('node:dns').promises;
+const net = require('node:net');
 const path = require('node:path');
 
 const INSPECTOR_WIDTH = 420;
 const TOOLBAR_HEIGHT = 112;
 const DOH_SERVERS = ['https://cloudflare-dns.com/dns-query'];
+const COMPARISON_DOH_RESOLVERS = {
+  cloudflare: { name: 'Cloudflare DoH', endpoint: 'https://cloudflare-dns.com/dns-query' },
+  google: { name: 'Google DNS DoH', endpoint: 'https://dns.google/dns-query' },
+  quad9: { name: 'Quad9 DoH', endpoint: 'https://dns.quad9.net/dns-query' },
+};
 let mainWindow;
 let browserView;
 let dohEnabled = true;
@@ -35,17 +42,29 @@ function normalizeAddress(input) {
   const value = String(input || '').trim();
   if (!value) throw new Error('Nhập địa chỉ website hoặc từ khóa tìm kiếm.');
 
+  const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(value)}`;
+  if (/\s/.test(value)) return searchUrl;
+
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:\/\//.test(value);
   let url;
   try {
-    url = new URL(/^[a-zA-Z][a-zA-Z\d+.-]*:\/\//.test(value) ? value : `https://${value}`);
+    url = new URL(hasScheme ? value : `https://${value}`);
   } catch {
-    url = new URL(`https://duckduckgo.com/?q=${encodeURIComponent(value)}`);
+    return searchUrl;
   }
 
   if (!['http:', 'https:'].includes(url.protocol)) {
     throw new Error('Mini browser chỉ mở địa chỉ HTTP hoặc HTTPS.');
   }
-  return url.toString();
+  if (hasScheme) return url.toString();
+
+  const hostname = url.hostname.replace(/\.$/, '');
+  const labels = hostname.split('.');
+  const hasDomainSuffix = net.isIP(hostname) !== 0
+    || (labels.length > 1
+      && labels.every(Boolean)
+      && /^(?:[a-z]{2,}|xn--[a-z0-9-]+)$/i.test(labels[labels.length - 1]));
+  return hasDomainSuffix ? url.toString() : searchUrl;
 }
 
 function applyDohMode(enabled) {
@@ -89,19 +108,95 @@ function startTrace(url) {
   addTraceStep('Bắt đầu truy cập', url, 'loading');
 }
 
-async function resolveWithCloudflare(domain, type) {
-  const endpoint = new URL('https://cloudflare-dns.com/dns-query');
-  endpoint.searchParams.set('name', domain);
-  endpoint.searchParams.set('type', type);
-  const response = await fetch(endpoint, { headers: { accept: 'application/dns-json' } });
-  if (!response.ok) throw new Error(`Cloudflare DNS trả về HTTP ${response.status}`);
-  const result = await response.json();
-  if (result.Status !== 0 && result.Status !== 3) {
-    throw new Error(`DNS status ${result.Status}`);
+function createDnsQuery(domain, type) {
+  const hostname = new URL(`http://${domain}`).hostname;
+  const id = randomInt(0x10000);
+  const header = Buffer.alloc(12);
+  header.writeUInt16BE(id, 0);
+  header.writeUInt16BE(0x0100, 2);
+  header.writeUInt16BE(1, 4);
+
+  const labels = hostname.split('.').map((label) => {
+    const bytes = Buffer.from(label, 'ascii');
+    if (!bytes.length || bytes.length > 63) throw new Error('Tên miền không hợp lệ.');
+    return Buffer.concat([Buffer.from([bytes.length]), bytes]);
+  });
+  const question = Buffer.concat([
+    ...labels,
+    Buffer.from([0, type === 'A' ? 1 : 28, 0, 1]),
+  ]);
+  return { id, packet: Buffer.concat([header, question]) };
+}
+
+function skipDnsName(packet, offset) {
+  while (offset < packet.length) {
+    const length = packet[offset];
+    if (length === 0) return offset + 1;
+    if ((length & 0xc0) === 0xc0) {
+      if (offset + 1 >= packet.length) throw new Error('Phản hồi DNS không hợp lệ.');
+      return offset + 2;
+    }
+    if ((length & 0xc0) !== 0 || offset + 1 + length > packet.length) {
+      throw new Error('Phản hồi DNS không hợp lệ.');
+    }
+    offset += length + 1;
   }
-  return (result.Answer || [])
-    .filter((answer) => answer.type === (type === 'A' ? 1 : 28))
-    .map((answer) => answer.data);
+  throw new Error('Phản hồi DNS không hợp lệ.');
+}
+
+function parseDnsResponse(packet, id, type) {
+  if (packet.length < 12 || packet.readUInt16BE(0) !== id) {
+    throw new Error('Phản hồi DNS không hợp lệ.');
+  }
+  const flags = packet.readUInt16BE(2);
+  if (!(flags & 0x8000) || flags & 0x0200) throw new Error('Phản hồi DNS không hợp lệ.');
+  const responseCode = flags & 0x000f;
+  if (responseCode === 3) return [];
+  if (responseCode !== 0) throw new Error(`DNS status ${responseCode}`);
+
+  const questionCount = packet.readUInt16BE(4);
+  const answerCount = packet.readUInt16BE(6);
+  let offset = 12;
+  for (let index = 0; index < questionCount; index += 1) {
+    offset = skipDnsName(packet, offset) + 4;
+    if (offset > packet.length) throw new Error('Phản hồi DNS không hợp lệ.');
+  }
+
+  const expectedType = type === 'A' ? 1 : 28;
+  const addresses = [];
+  for (let index = 0; index < answerCount; index += 1) {
+    offset = skipDnsName(packet, offset);
+    if (offset + 10 > packet.length) throw new Error('Phản hồi DNS không hợp lệ.');
+    const recordType = packet.readUInt16BE(offset);
+    const recordClass = packet.readUInt16BE(offset + 2);
+    const dataLength = packet.readUInt16BE(offset + 8);
+    const dataOffset = offset + 10;
+    if (dataOffset + dataLength > packet.length) throw new Error('Phản hồi DNS không hợp lệ.');
+
+    if (recordClass === 1 && recordType === expectedType
+        && dataLength === (type === 'A' ? 4 : 16)) {
+      const data = packet.subarray(dataOffset, dataOffset + dataLength);
+      addresses.push(type === 'A'
+        ? Array.from(data).join('.')
+        : Array.from({ length: 8 }, (_, group) => data.readUInt16BE(group * 2).toString(16)).join(':'));
+    }
+    offset = dataOffset + dataLength;
+  }
+  return addresses;
+}
+
+async function resolveWithDoH(domain, type, resolver) {
+  const { id, packet } = createDnsQuery(domain, type);
+  const response = await fetch(resolver.endpoint, {
+    method: 'POST',
+    headers: {
+      accept: 'application/dns-message',
+      'content-type': 'application/dns-message',
+    },
+    body: packet,
+  });
+  if (!response.ok) throw new Error(`${resolver.name} trả về HTTP ${response.status}`);
+  return parseDnsResponse(Buffer.from(await response.arrayBuffer()), id, type);
 }
 
 async function resolveWithSystem(domain, type) {
@@ -375,7 +470,7 @@ ipcMain.handle('browser:reload', () => {
 });
 ipcMain.handle('browser:get-inspection', () => latestLookup);
 ipcMain.handle('browser:get-trace', () => latestTrace);
-ipcMain.handle('browser:compare-dns', async (_event, input) => {
+ipcMain.handle('browser:compare-dns', async (_event, { domain: input, resolver: resolverId } = {}) => {
   const value = String(input || '').trim();
   let parsed;
   try {
@@ -388,8 +483,12 @@ ipcMain.handle('browser:compare-dns', async (_event, input) => {
     throw new Error('Chỉ nhập tên miền, không nhập đường dẫn website.');
   }
   const domain = parsed.hostname;
+  const dohResolver = Object.prototype.hasOwnProperty.call(COMPARISON_DOH_RESOLVERS, resolverId)
+    ? COMPARISON_DOH_RESOLVERS[resolverId]
+    : null;
+  if (!dohResolver) throw new Error('Chọn một nhà cung cấp DoH hợp lệ.');
   const [doh, system] = await Promise.all([
-    compareResolver(domain, 'Cloudflare DoH', resolveWithCloudflare),
+    compareResolver(domain, dohResolver.name, (name, type) => resolveWithDoH(name, type, dohResolver)),
     compareResolver(domain, 'DNS hệ điều hành', resolveWithSystem),
   ]);
   return { domain, doh, system };
