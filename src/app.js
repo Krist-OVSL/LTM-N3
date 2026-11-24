@@ -210,11 +210,12 @@ $('#sidebarToggle').addEventListener('click', () => window.miniBrowser.toggleSid
 $('#compareForm').addEventListener('submit', async (event) => {
   event.preventDefault();
   const input = $('#compareDomain');
+  const resolver = $('#compareResolver').value;
   const button = $('#compareButton');
   button.disabled = true;
   button.textContent = 'Đang tra…';
   try {
-    const result = await window.miniBrowser.compareDns(input.value);
+    const result = await window.miniBrowser.compareDns({ domain: input.value, resolver });
     renderComparison(result);
   } catch (error) {
     const container = $('#comparisonResults');

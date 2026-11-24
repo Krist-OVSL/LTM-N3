@@ -122,6 +122,12 @@
         <p class="eyebrow">SO SÁNH DNS</p>
         <h2>DoH và DNS hệ điều hành</h2>
         <form id="compareForm" class="compare-form">
+          <label for="compareResolver">Nhà cung cấp DoH</label>
+          <select id="compareResolver">
+            <option value="cloudflare">Cloudflare</option>
+            <option value="google">Google DNS</option>
+            <option value="quad9">Quad9</option>
+          </select>
           <label for="compareDomain">Tên miền cần tra cứu</label>
           <div class="lookup-row">
             <input id="compareDomain" type="text" autocomplete="off" spellcheck="false" placeholder="example.com" />
@@ -129,9 +135,9 @@
           </div>
         </form>
         <div id="comparisonResults" class="comparison-results" aria-live="polite">
-          <p class="empty-state">Tra cứu độc lập qua Cloudflare DoH và DNS hệ điều hành.</p>
+          <p class="empty-state">Chọn nhà cung cấp DoH để so sánh với DNS hệ điều hành.</p>
         </div>
-        <p class="comparison-note">Cloudflare DoH mã hóa truy vấn trong HTTPS (cổng 443). DNS hệ điều hành gửi truy vấn dạng plaintext qua UDP (cổng 53). Truy vấn so sánh không thay đổi chế độ DNS của mini browser.</p>
+        <p class="comparison-note">Resolver DoH được chọn mã hóa truy vấn trong HTTPS (cổng 443). DNS hệ điều hành gửi truy vấn dạng plaintext qua UDP (cổng 53). Truy vấn so sánh không thay đổi chế độ DNS của mini browser.</p>
       </section>
 
       <section class="notice-card">

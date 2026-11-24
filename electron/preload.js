@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld('miniBrowser', {
   reload: () => ipcRenderer.invoke('browser:reload'),
   refreshInspection: () => ipcRenderer.invoke('browser:refresh-inspection'),
   getInspection: () => ipcRenderer.invoke('browser:get-inspection'),
-  compareDns: (domain) => ipcRenderer.invoke('browser:compare-dns', domain),
+  compareDns: (options) => ipcRenderer.invoke('browser:compare-dns', options),
   getTrace: () => ipcRenderer.invoke('browser:get-trace'),
   getConnection: () => ipcRenderer.invoke('browser:get-connection'),
   getSidebar: () => ipcRenderer.invoke('browser:get-sidebar'),
