@@ -2,124 +2,123 @@
 
 | Thành viên | Phần phụ trách |
 |---|---|
-| **Ngô Đồng Quang Nguyên — Nhóm trưởng** | Khởi tạo repository; phụ trách nền tảng Electron, cấu hình cửa sổ, điều hướng và chế độ DNS/DoH trong `electron/main.js`; cầu nối giữa giao diện và tiến trình chính trong `electron/preload.js`. |
-| **Lương Phạm Xuân Bảo** | Phụ trách giao diện và tương tác mini browser trong `src/index.html`, `src/app.js`, `src/style.css`; hiển thị thông tin DNS và kết nối. |
-| **Lê Nguyễn Khôi Nguyên** | Phụ trách trang khởi động và hình minh họa trong `src/start.html`, `src/start.css`, `src/assets/`; trách nhiệm bổ sung cho chức năng **So sánh DNS** và **Diễn biến lần truy cập** trong giao diện và logic ứng dụng; hỗ trợ tài liệu dự án và hướng dẫn cài đặt. |
+| **Ngô Đồng Quang Nguyên — Nhóm trưởng** | Khởi tạo repository và nền tảng Electron; cấu hình cửa sổ, điều hướng và chế độ DNS/DoH trong `electron/main.js`; cầu nối IPC trong `electron/preload.js`; cải tiến độ chính xác đo lường mạng (`dns.resolve4/6` gửi truy vấn UDP thực thay vì đọc cache cục bộ); tái cấu trúc thanh tra Inspector (bổ sung sơ đồ luồng gói tin, bộ lọc kiểm chứng Wireshark, lược bỏ các thẻ thừa và sửa lỗi chặn điều hướng). |
+| **Lê Nguyễn Khôi Nguyên** | Phụ trách tính năng **Nhận diện thông minh (Smart Search)** trong `electron/main.js` (phân biệt tên miền và tự động tìm kiếm Google khi nhập từ khóa); phụ trách và duy trì chức năng **So sánh DNS**; hỗ trợ tài liệu dự án và hướng dẫn cài đặt. |
+| **Lương Phạm Xuân Bảo** | Phụ trách giao diện và tương tác mini browser trong `src/index.html`, `src/app.js`, `src/style.css`; thiết kế và tích hợp **thanh tìm kiếm Google trực quan trên trang khởi động** (`src/start.html`, `src/start.css`). |
 
 # DoH Mini Browser
 
-Ứng dụng desktop thử nghiệm cho môn Lập trình mạng. Mini browser có công tắc DoH riêng và tự tra cứu A/AAAA cho hostname của trang đang mở bằng chính resolver cấu hình cho Chromium.
+Ứng dụng desktop thử nghiệm cho môn Lập trình mạng. Mini browser được tích hợp công tắc DoH riêng, tự động tra cứu bản ghi A/AAAA cho hostname của trang đang mở bằng chính resolver cấu hình cho Chromium, đồng thời hỗ trợ kiểm chứng và so sánh với DNS truyền thống.
 
 ## Giao diện
 
 ![Giao diện DoH Mini Browser](./screenshots/doh-mini-browser.png)
 
-> **Phạm vi trạng thái:** công tắc cho biết cấu hình DNS mà mini browser tự đặt, không phát hiện trạng thái DoH toàn hệ thống, app 1.1.1.1 hoặc WARP. Khi bật, app đặt Chromium ở chế độ `secure` với resolver Cloudflare và không cho fallback sang DNS thường. Khi tắt, resolver Chromium gửi DNS theo máy chủ DNS hệ điều hành cấu hình. VPN/WARP vẫn có thể bọc lưu lượng đó. Các ứng dụng khác trên máy không bị thay đổi.
+> **Phạm vi trạng thái:** Công tắc phản ánh cấu hình DNS mà mini browser tự thiết lập cho Chromium trong ứng dụng, không can thiệp hay phát hiện trạng thái DoH toàn hệ điều hành, app 1.1.1.1 hoặc Cloudflare WARP. Khi BẬT, ứng dụng đặt Chromium ở chế độ `secure` với resolver Cloudflare (`https://cloudflare-dns.com/dns-query`) và không fallback sang DNS thường. Khi TẮT, resolver Chromium gửi truy vấn DNS theo cấu hình của hệ điều hành (UDP cổng 53).
 
 ## Yêu cầu
 
-- Windows 10/11 64-bit là môi trường được hướng dẫn cài đặt trong dự án. macOS/Linux chưa được nhóm xác nhận.
-- Node.js LTS và npm. Trên Windows, nhóm khuyến nghị Node.js 24 LTS.
-- Kết nối Internet để tải Electron và gửi truy vấn tới Cloudflare DNS.
-
-`package.json` ghim `yauzl` phiên bản mới hơn thông qua `overrides` để tránh lỗi giải nén Electron đã được báo cáo với Node.js 26 trên Windows.
+- Windows 10/11 64-bit là môi trường được hướng dẫn và kiểm thử chính trong dự án.
+- Node.js LTS (khuyến nghị phiên bản 22 LTS hoặc 24 LTS) và npm.
+- Kết nối Internet để cài đặt Electron và gửi truy vấn tới Cloudflare DoH / Google.
+- *(Tùy chọn)* Wireshark để bắt gói tin và đối chiếu cơ chế bảo mật.
 
 ## Cài đặt
 
-Hướng dẫn từng bước dành cho các bạn trong lớp nằm tại [HUONG_DAN_CAI_DAT.md](./HUONG_DAN_CAI_DAT.md). Tóm tắt lệnh chạy từ thư mục có `package.json`:
+Hướng dẫn từng bước chi tiết dành cho các bạn trong lớp xem tại [HUONG_DAN_CAI_DAT.md](./HUONG_DAN_CAI_DAT.md). Tóm tắt các lệnh chạy từ thư mục dự án:
 
 ```sh
 npm ci
 npm start
 ```
-
-Nếu npm báo đã bỏ qua script cài đặt Electron, hãy làm theo mục khắc phục lỗi trong hướng dẫn cài đặt để duyệt script Electron rồi chạy `npm rebuild electron`.
+*(Trên Windows PowerShell, bạn có thể chạy `npm.cmd start` hoặc `npx.cmd electron .`)*
 
 ## Cách dùng
 
-1. Ứng dụng mở trang khởi động minh họa, không tự kết nối website nào. Nhập URL (ví dụ `https://example.com`) hoặc tên miền vào thanh địa chỉ phía trên rồi nhấn Enter / **Đi tới**. Nhập từ khóa sẽ mở kết quả tìm kiếm DuckDuckGo.
-2. Dùng ←, → và ↻ để điều hướng.
-3. Công tắc **DoH mini browser** bật/tắt Secure DNS cho browser bên trong app. Khi đổi chế độ, app xóa DNS cache rồi tải lại trang hiện tại.
-4. Bảng bên phải tự tra cứu hostname của trang hiện tại qua cùng Chromium resolver. Nút ↻ cạnh kết quả chạy lại tra cứu A và AAAA, bỏ qua cache resolver. Mục **Destination IP · trang chính** hiển thị IP đích mà Chromium kết nối để tải tài liệu chính, cùng cổng, giao thức và HTTP status. Danh sách DNS là câu trả lời A/AAAA để đối chiếu; IP đích thực tế có thể khác hoặc chọn một địa chỉ trong số đó.
-5. Hai thẻ **Kết nối trang chính** và **Kết quả phân giải** có thể thu gọn/mở riêng bằng cách nhấn tiêu đề. Nút biểu tượng khung bên phải cạnh thanh địa chỉ thu gọn/mở toàn bộ sidebar; khi thu gọn, vùng trang web rộng ra.
-6. Để kiểm chứng trên lớp, bắt lưu lượng bằng Wireshark khi chuyển trang/tải lại. Khi bật DoH, truy vấn browser tới Cloudflare đi trong HTTPS và nội dung DNS không hiện thành gói DNS thường; khi tắt, truy vấn DNS có thể thấy ở filter `dns` / cổng 53. Đóng các ứng dụng mạng khác để giảm nhiễu. Wireshark xác nhận hành vi trên mạng; trạng thái trong app cho biết chế độ resolver mà app đã cấu hình.
-7. Trong thẻ **So sánh DNS**, nhập tên miền để xem bản ghi A/AAAA và thời gian truy vấn qua Cloudflare DoH và DNS hệ điều hành. Đây là hai truy vấn độc lập, không làm thay đổi chế độ DNS đang bật cho mini browser; thời gian có thể chịu ảnh hưởng của mạng và cache.
-8. Thẻ **Diễn biến** ghi các mốc ứng dụng quan sát được trong lần truy cập hiện tại: bắt đầu, tra cứu DNS, kết quả và phản hồi trang chính. Đây không phải bản ghi đầy đủ mọi gói mạng.
+1. **Khởi động và Tìm kiếm:**
+   - Ứng dụng mở trang khởi động cục bộ, tích hợp sẵn **ô tìm kiếm Google** ở giữa màn hình.
+   - Thanh địa chỉ trên cùng hỗ trợ **Smart Search**: Nhập tên miền (ví dụ: `vnexpress.net`, `example.com`) để mở thẳng website; nhập từ khóa bất kỳ (ví dụ: `thời tiết hôm nay`, `doh là gì`) sẽ tự động chuyển hướng tìm kiếm trên Google.
+2. **Điều hướng:** Dùng các nút ←, → và ↻ để quay lại, tiến tới hoặc tải lại trang.
+3. **Chuyển đổi DoH (Hot-toggle):**
+   - Công tắc **DoH cho mini browser** cho phép bật/tắt Secure DNS cho browser bên trong app.
+   - Khi đổi chế độ, app tự động xóa cache resolver của Chromium (`clearHostResolverCache()`) rồi tải lại trang để ép thực hiện phân giải mới.
+4. **Sơ đồ luồng & Hướng dẫn kiểm chứng Wireshark:**
+   - Ngay dưới công tắc có sơ đồ luồng gói tin trực quan:
+     - **BẬT DoH:** `App → [HTTPS :443 🔒] → Cloudflare`
+     - **TẮT DoH:** `App → [UDP :53 ⚠️] → DNS Server`
+   - Khung **Kiểm chứng Wireshark** cung cấp sẵn cú pháp bộ lọc để kiểm chứng:
+     - Khi BẬT DoH: `ip.dst == 1.1.1.1 && tcp.port == 443` (dữ liệu DNS nằm trong TLS Application Data, giấu tên miền).
+     - Khi TẮT DoH: `dns` (gói tin DNS gửi qua UDP 53 lộ rõ tên miền dạng plaintext).
+5. **Thông tin kết nối & Phân giải DNS:**
+   - **Destination IP · trang chính:** Hiển thị IP máy chủ web đích mà Chromium thực sự kết nối để tải tài liệu chính, kèm cổng, giao thức (HTTP/2, HTTP/3) và HTTP status.
+   - **Kết quả phân giải:** Tự động tra cứu các bản ghi A (IPv4) và AAAA (IPv6) của tên miền bằng cùng resolver mà browser đang dùng, kèm thời gian phân giải (`elapsedMs`).
+6. **So sánh DNS độc lập:**
+   - Ở thẻ **So sánh DNS**, nhập tên miền bất kỳ để tra cứu song song qua Cloudflare DoH (HTTPS cổng 443) và DNS hệ điều hành (`dns.resolve4/6` qua UDP cổng 53 thật ra mạng).
+   - Hiển thị kết quả IP và thời gian phản hồi (ms) để đối chiếu hiệu năng giữa DoH và DNS truyền thống mà không làm gián đoạn trang web đang mở.
 
 ## Luồng hoạt động
 
 ```mermaid
-flowchart LR
-    A[Nhập URL] --> B{Chế độ DNS}
-    B -->|DoH bật| C[Chromium phân giải qua Cloudflare DoH]
-    B -->|DoH tắt| D[Chromium dùng resolver hệ điều hành]
-    C --> E[Tải trang bằng Chromium]
+flowchart TD
+    A["Nhập URL hoặc từ khóa"] --> B{"Phân loại Smart Search"}
+    B -->|"Tên miền (Domain/IP)"| C["Tạo URL trang web"]
+    B -->|"Từ khóa tìm kiếm"| D["Chuyển hướng Google Search"]
+    C --> E{"Chế độ DoH"}
     D --> E
-    E --> F[Hiển thị bản ghi A/AAAA]
-    E --> G[Hiển thị IP endpoint của phản hồi tài liệu chính]
+    E -->|"DoH BẬT"| F["Mã hóa HTTPS cổng 443 tới Cloudflare"]
+    E -->|"DoH TẮT"| G["Gửi UDP cổng 53 tới DNS hệ điều hành"]
+    F --> H["Tải trang bằng Chromium (WebContentsView)"]
+    G --> H
+    H --> I["CDP trích xuất Destination IP & Protocol"]
+    H --> J["Hiển thị bản ghi A/AAAA & Thời gian"]
+    H --> K["Kiểm chứng gói tin qua Wireshark"]
 ```
-
-DoH mã hóa truy vấn DNS giữa mini browser và resolver. Sau khi phân giải, Chromium vẫn kết nối tới website qua HTTP/HTTPS; DoH không thay thế HTTPS và không che IP kết nối khỏi website.
 
 ## Các phần trên giao diện
 
 | Khu vực | Nhiệm vụ | Nội dung hiển thị |
 | --- | --- | --- |
-| Thanh đầu trang | Nhận diện sản phẩm. | Tên ứng dụng và trạng thái mini browser. |
-| Thanh điều hướng | Nhập URL/từ khóa và thao tác lịch sử trang. | Nút quay lại, tiến tới, tải lại, ô địa chỉ nằm trên cùng, nút Đi tới và nút ẩn/hiện sidebar. |
-| Trang khởi động | Chào người dùng và hiển thị ảnh minh họa được chép trong dự án. | Ảnh Silent Night, Holy Night; không tự truy cập website hay gửi truy vấn DNS. |
-| Khung web bên trái | Hiển thị trang khởi động hoặc website đang mở bằng Chromium của Electron. | Nội dung website; app không trích xuất nội dung trang vào bảng DNS. |
-| Công tắc “DoH cho mini browser” | Bật/tắt Secure DNS cho browser của app. | Trạng thái BẬT/TẮT, resolver Cloudflare hoặc DNS hệ điều hành. |
-| Thẻ “Destination IP · trang chính” | Đọc địa chỉ remote IP từ phản hồi mạng của tài liệu chính qua Chromium DevTools Protocol; bỏ qua HTTP cache và service worker trong mini browser để hạn chế phản hồi không có socket IP mới. | IP đích của kết nối trang chính, cổng, giao thức và HTTP status. Không đại diện cho mọi kết nối CDN/tài nguyên phụ; proxy có thể làm IP hiển thị là endpoint proxy. |
-| Bảng “DNS của trang đang mở” | Tra cứu hostname hiện tại bằng resolver mà browser dùng. | Bản ghi A/AAAA, IP trả về, trạng thái, resolver và thời gian. |
-| Thẻ “So sánh DNS” | Tra cứu độc lập tên miền qua Cloudflare DoH và DNS hệ điều hành. | Bản ghi A/AAAA, địa chỉ, thời gian và lỗi riêng của từng resolver. |
-| Thẻ “Diễn biến” | Gom các mốc của lần truy cập hiện tại từ sự kiện ứng dụng. | Bắt đầu truy cập, tra cứu DNS, kết quả và phản hồi/lỗi tải trang. |
-| Nút sidebar | Thu gọn/mở bảng thông tin DNS. | Khi ẩn, khung website mở rộng hết chiều ngang. |
-| Tiêu đề “Destination IP · trang chính” và “Kết quả phân giải” | Thu gọn/mở nội dung của từng thẻ. | Các tiêu đề khác luôn hiển thị cùng nội dung. |
-| Thẻ “Trang đang mở” | Cho biết địa chỉ và trạng thái điều hướng hiện tại. | Tiêu đề trang, URL và trạng thái tải/lỗi. |
-| Thẻ thông tin | Nêu rõ phạm vi của công tắc. | Chỉ áp dụng cho mini browser, không kiểm tra Windows/1.1.1.1/WARP. |
-| Dòng cuối bảng | Nêu chế độ DNS và xử lý dữ liệu. | DoH-only khi bật; resolver hệ điều hành khi tắt; không lưu lịch sử vào file. |
+| Thanh đầu trang | Nhận diện sản phẩm | Tên ứng dụng và nhãn trạng thái Mini browser. |
+| Thanh điều hướng | Nhập địa chỉ/từ khóa và điều hướng | Nút quay lại, tiến tới, tải lại, ô Smart Search và nút ẩn/hiện sidebar. |
+| Trang khởi động | Chào mừng và tìm kiếm nhanh | Ảnh minh họa Silent Night và **thanh tìm kiếm Google** trực quan. |
+| Khung web bên trái | Hiển thị nội dung website | Giao diện trang khởi động hoặc website HTTP/HTTPS mở qua `WebContentsView`. |
+| Công tắc DoH | Bật/tắt Secure DNS | Trạng thái BẬT/TẮT, resolver sử dụng và mô tả giao thức/cổng. |
+| Sơ đồ luồng gói tin | Trực quan hóa đường truyền | Minh họa luồng dữ liệu (HTTPS :443 🔒 so với UDP :53 ⚠️). |
+| Khung gợi ý Wireshark | Hướng dẫn kiểm chứng | Bộ lọc gợi ý cho Wireshark khi BẬT hoặc TẮT DoH. |
+| Thẻ Destination IP | Lấy thông tin socket thực tế | IP đích của tài liệu chính, cổng, giao thức (HTTP/2, HTTP/3) và HTTP status từ CDP. |
+| Thẻ Kết quả phân giải | Tra cứu DNS trang hiện tại | Danh sách bản ghi A/AAAA, resolver và thời gian phản hồi (ms). |
+| Thẻ So sánh DNS | Đo lường và đối chiếu độc lập | Tra cứu song song tên miền qua Cloudflare DoH và DNS hệ điều hành (UDP thực). |
+| Thông tin phạm vi | Ghi chú kỹ thuật | Làm rõ phạm vi cục bộ của ứng dụng, không can thiệp cài đặt mạng Windows. |
 
 ## Ghi chú từng phần
 
-| File / phần | Nhiệm vụ | Hiển thị hoặc xử lý |
+| File / phần | Nhiệm vụ | Chi tiết kỹ thuật |
 | --- | --- | --- |
-| `electron/main.js` | Tạo cửa sổ; cấu hình Secure DNS của Chromium; điều hướng; phân giải hostname trang qua Electron Session; theo dõi phản hồi tài liệu chính qua CDP; đổi kích thước khung khi ẩn/hiện sidebar. | Trạng thái trang, chế độ DNS, A/AAAA, IP endpoint phản hồi, cổng, giao thức và HTTP status. |
-| `electron/preload.js` | Cung cấp API IPC giới hạn cho giao diện qua `contextBridge`. | Không có UI; ngăn renderer truy cập trực tiếp API Node/Electron. |
-| `src/index.html` | Khai báo cấu trúc giao diện tiếng Việt. | Header, thanh URL, bảng DoH, thông tin trang và chú thích giới hạn. |
-| `src/style.css` | Định dạng giao diện và bố cục browser / inspector. | Màu sắc, nút, kết quả, trạng thái và thông báo. |
-| `src/start.html`, `src/start.css` | Tạo trang đầu cục bộ để thay cho website mẫu. | Lời chào, hướng dẫn dùng thanh địa chỉ phía trên và bố cục ảnh. |
-| `src/assets/silent-night.png` | Bản sao nội bộ của ảnh người dùng đã chọn. | Hiển thị ảnh trên trang khởi động; ứng dụng không tham chiếu thư mục Pictures/OneDrive. |
-| `src/app.js` | Bắt thao tác người dùng và cập nhật UI từ IPC. | Điều hướng, lỗi, IP trả về, trạng thái và thời gian. |
-| `package.json` | Khai báo Electron và lệnh `npm start`. | Không có UI. |
-| `.gitignore` | Loại dependency và file build khỏi Git. | Không có UI. |
+| `electron/main.js` | Quản lý tiến trình chính Electron | Cấu hình cửa sổ, nạp `WebContentsView`, cấu hình `configureHostResolver`, phân loại Smart Search (Google), trích xuất IP qua CDP, tra cứu A/AAAA và `dns.resolve4/6`. |
+| `electron/preload.js` | Cầu nối an toàn IPC | Cung cấp API `window.miniBrowser` giới hạn qua `contextBridge`, ngăn renderer truy cập trực tiếp Node.js. |
+| `src/index.html` | Cấu trúc giao diện | Khung điều hướng, thanh tra Inspector với sơ đồ luồng, khung Wireshark và các card thông tin DNS. |
+| `src/app.js` | Logic phía renderer | Bắt sự kiện người dùng, gửi/nhận dữ liệu IPC, render kết nối, kết quả phân giải và so sánh DNS. |
+| `src/style.css` | Định dạng giao diện | Phong cách hiện đại, responsive, thẻ trạng thái, sơ đồ luồng và bố cục thanh tra. |
+| `src/start.html`, `src/start.css` | Trang khởi động | Ảnh nền minh họa, thông điệp chào mừng và form tìm kiếm Google tích hợp. |
+| `src/assets/silent-night.png` | Ảnh minh họa | Hình nền trang khởi động (Reverse: 1999). |
+| `screenshots/doh-mini-browser.png` | Ảnh chụp giao diện | Minh họa giao diện thực tế của ứng dụng. |
+| `HUONG_DAN_CAI_DAT.md` | Tài liệu cài đặt | Hướng dẫn chi tiết môi trường và cách khởi chạy trên Windows. |
 
 ## Dữ liệu và quyền riêng tư
 
-- Ứng dụng hiện không ghi lịch sử duyệt web vào file.
-- IP endpoint của phản hồi trang chính chỉ được giữ trong bộ nhớ để hiển thị trên sidebar; app không lưu danh sách IP này vào file.
-- Khi DoH bật, các truy vấn DNS của mini browser được gửi tới Cloudflare; không nhập tên miền nhạy cảm khi demo công khai.
-- Khi dùng chức năng so sánh, tên miền được gửi tới Cloudflare DoH và được tra cứu bằng API phân giải tên miền của hệ điều hành.
-- Browser lưu dữ liệu phiên Electron cục bộ theo partition riêng. Chưa có nút xóa cache/cookie trong MVP.
-- Ứng dụng không chụp packet và không giám sát thiết bị khác. Wireshark là công cụ quan sát ngoài trong môi trường lab có thông báo cho người tham gia.
+- Ứng dụng không lưu lịch sử duyệt web hay danh sách IP vào tệp ngoài.
+- Dữ liệu kết nối và bản ghi DNS chỉ được lưu tạm thời trong bộ nhớ phiên làm việc.
+- Khi bật DoH, truy vấn DNS gửi tới Cloudflare qua kênh mã hóa HTTPS; ứng dụng không capture gói tin của các phần mềm khác trên máy.
+- Wireshark là công cụ giám sát độc lập bên ngoài dùng trong môi trường thực nghiệm.
 
 ## Thành viên và đóng góp
 
 | Thành viên | Phần phụ trách |
-| --- | --- |
-| **Ngô Đồng Quang Nguyên — Nhóm trưởng** | Khởi tạo repository và phần nền tảng Electron; cấu hình cửa sổ, điều hướng, DNS/DoH trong `electron/main.js`; cầu nối giới hạn giữa giao diện và tiến trình chính trong `electron/preload.js`. |
-| **Lương Phạm Xuân Bảo** | Giao diện và tương tác mini browser trong `src/index.html`, `src/app.js`, `src/style.css`; hiển thị thông tin DNS và kết nối do tiến trình chính gửi về. |
-| **Lê Nguyễn Khôi Nguyên** | Trang khởi động trong `src/start.html`, `src/start.css`, ảnh trong `src/assets/`; bổ sung chức năng **So sánh DNS** và **Diễn biến lần truy cập** trong giao diện và logic ứng dụng; tài liệu dự án trong `README.md` và `HUONG_DAN_CAI_DAT.md`. |
-
-Phân công trên mô tả các phần chịu trách nhiệm chính; nhóm cần cập nhật nếu công việc thực tế có thay đổi.
-
-## Cấu trúc
-
-```text
-electron/   tiến trình chính Electron và preload
-src/        giao diện, trang khởi động, ảnh nội bộ và logic renderer
-```
+|---|---|
+| **Ngô Đồng Quang Nguyên — Nhóm trưởng** | Khởi tạo repository và nền tảng Electron; cấu hình cửa sổ, điều hướng và chế độ DNS/DoH trong `electron/main.js`; cầu nối IPC trong `electron/preload.js`; cải tiến độ chính xác đo lường mạng (`dns.resolve4/6` gửi truy vấn UDP thực thay vì đọc cache cục bộ); tái cấu trúc thanh tra Inspector (bổ sung sơ đồ luồng gói tin, bộ lọc kiểm chứng Wireshark, lược bỏ các thẻ thừa và sửa lỗi chặn điều hướng). |
+| **Lê Nguyễn Khôi Nguyên** | Phụ trách tính năng **Nhận diện thông minh (Smart Search)** trong `electron/main.js` (phân biệt tên miền và tự động tìm kiếm Google khi nhập từ khóa); phụ trách và duy trì chức năng **So sánh DNS**; hỗ trợ tài liệu dự án và hướng dẫn cài đặt. |
+| **Lương Phạm Xuân Bảo** | Phụ trách giao diện và tương tác mini browser trong `src/index.html`, `src/app.js`, `src/style.css`; thiết kế và tích hợp **thanh tìm kiếm Google trực quan trên trang khởi động** (`src/start.html`, `src/start.css`). |
 
 ## Giấy phép
 
-Xem nội dung giấy phép được chọn trong file [LICENSE](./LICENSE).
+Xem nội dung giấy phép trong file [LICENSE](./LICENSE).
